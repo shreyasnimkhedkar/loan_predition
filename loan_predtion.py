@@ -45,6 +45,7 @@ print(f"XGBoost Accuracy: {accuracy_score(y_test, y_pred):.2f}")
 
 # Streamlit UI
 def main():
+    st.title("SHREYAS NIMKHEDKAR")
     st.title("Loan Prediction System")
     
     if st.checkbox("Show Dataset"):
