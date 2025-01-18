@@ -10,7 +10,7 @@ from xgboost import XGBClassifier
 # Load and preprocess the dataset
 
 def load_data():
-    df = pd.read_csv("https://raw.githubusercontent.com/shreyasnimkhedkar/loan_predition/refs/heads/master/loan%20dataset.csv")
+    df = pd.read_csv("https://raw.githubusercontent.com/shreyasnimkhedkar/loan_predition/refs/heads/master/train.csv")
     data = df.dropna()
     loan = LabelEncoder()
     
