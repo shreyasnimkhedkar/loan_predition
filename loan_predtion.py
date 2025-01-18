@@ -2,55 +2,58 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score
 from xgboost import XGBClassifier
 
-# Load and preprocess the dataset
-
+# Load Data set
 def load_data():
-    df = pd.read_csv("https://raw.githubusercontent.com/shreyasnimkhedkar/loan_predition/refs/heads/master/train.csv")
-    data = df.dropna()
-    loan = LabelEncoder()
+    load_data = "https://raw.githubusercontent.com/shreyasnimkhedkar/loan_predition/refs/heads/master/train.csv"  # Example dataset
+    data = pd.read_csv(load_data)
     
+    # Drop rows with missing values
+    data = data.dropna()
+
     # Encode categorical features
-    data['Gender'] = loan.fit_transform(data['Gender'])
-    data['Married'] = loan.fit_transform(data['Married'])
-    data['Education'] = loan.fit_transform(data['Education'])
-    data['Self_Employed'] = loan.fit_transform(data['Self_Employed'])
-    data['Property_Area'] = loan.fit_transform(data['Property_Area'])
-    data['Loan_Status'] = loan.fit_transform(data['Loan_Status'])
+    label_enc = LabelEncoder()
+    data['Gender'] = label_enc.fit_transform(data['Gender'])
+    data['Married'] = label_enc.fit_transform(data['Married'])
+    data['Education'] = label_enc.fit_transform(data['Education'])
+    data['Self_Employed'] = label_enc.fit_transform(data['Self_Employed'])
+    data['Property_Area'] = label_enc.fit_transform(data['Property_Area'])
+    data['Loan_Status'] = label_enc.fit_transform(data['Loan_Status'])
+
+    data['Dependents'] = data['Dependents'].replace('3+', 3).astype(int)
+
     return data
 
+# Load data
 data = load_data()
 
-# Split dataset into features and target
+# Split dataset
 x = data.iloc[:, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]]
-y = data['Loan_Status']
+y = data.iloc[:, 12]
 
 # Train-test split
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.1, stratify=y, random_state=2)
+assert x_train.shape[1] == x_test.shape[1], "Mismatch in feature count between train and test sets"
 
-# Train the XGBoost model
 xgb = XGBClassifier()
 xgb.fit(x_train, y_train)
 y_pred = xgb.predict(x_test)
+print(f"XGBoost Accuracy: {accuracy_score(y_test, y_pred):.2f}")
 
 # Streamlit UI
 def main():
     st.title("Loan Prediction System")
-
-    # Display dataset
+    
     if st.checkbox("Show Dataset"):
         st.write(data.head())
 
-    # Show accuracy of the model
     st.write(f"Model Accuracy: {accuracy_score(y_test, y_pred):.2f}")
 
-    # User input for prediction
     st.header("Enter Loan Details for Prediction")
-    
+
     gender = st.selectbox("Gender", ["Male", "Female"])
     married = st.selectbox("Married", ["No", "Yes"])
     dependents = st.selectbox("Dependents", ["0", "1", "2", "3+"])
@@ -63,12 +66,11 @@ def main():
     credit_history = st.selectbox("Credit History", [0.0, 1.0])
     property_area = st.selectbox("Property Area", ["Rural", "Semiurban", "Urban"])
 
-    # Convert inputs to model format
     input_data = np.array([
         [
             1 if gender == "Male" else 0,
             1 if married == "Yes" else 0,
-            int(dependents[0]),
+            int(dependents[0]) if dependents != "3+" else 3,
             1 if education == "Graduate" else 0,
             1 if self_employed == "Yes" else 0,
             applicant_income,
@@ -80,7 +82,6 @@ def main():
         ]
     ])
 
-    # Predict and display result
     if st.button("Predict Loan Status"):
         prediction = xgb.predict(input_data)
         if prediction[0] == 1:
